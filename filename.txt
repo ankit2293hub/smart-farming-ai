@@ -1,0 +1,9 @@
+Write your content here
+🌿 Live App:
+https://smart-farming-ai-n4ewjrjcfzbvtq2vv6jnv7.streamlit.app
+
+⚙️ Backend API:
+https://ankit2293-smart-farming-api.hf.space
+
+💻 GitHub:
+https://github.com/ankit2293hub/smart-farming-ai

@@ -40,3 +40,15 @@ def chat_with_bot(message: str, history: list) -> str:
         max_tokens=500
     )
     return response.choices[0].message.content
+def translate_text(text: str, target_language: str) -> str:
+    try:
+        from deep_translator import GoogleTranslator
+        if target_language == "en":
+            return text
+        translated = GoogleTranslator(
+            source='auto',
+            target=target_language
+        ).translate(text)
+        return translated
+    except Exception as e:
+        return text  # Return original if translation fails
