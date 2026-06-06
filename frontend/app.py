@@ -7,9 +7,13 @@ import tempfile
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.weather import get_weather
-from src.irrigation import calculate_irrigation, CROP_WATER_NEEDS
-
+# Safe imports for cloud
+try:
+    from src.weather import get_weather
+    from src.irrigation import calculate_irrigation, CROP_WATER_NEEDS
+    FEATURES_AVAILABLE = True
+except Exception:
+    FEATURES_AVAILABLE = False
 st.set_page_config(
     page_title="🌿 Smart Farming AI",
     page_icon="🌿",

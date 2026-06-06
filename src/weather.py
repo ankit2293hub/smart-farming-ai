@@ -1,8 +1,12 @@
 import requests
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
+# Safe import — works both locally and on cloud
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 API_KEY = os.getenv("OPENWEATHER_API_KEY")
 

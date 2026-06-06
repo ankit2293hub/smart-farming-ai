@@ -1,4 +1,10 @@
 import os
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 from groq import Groq
 from dotenv import load_dotenv
 
