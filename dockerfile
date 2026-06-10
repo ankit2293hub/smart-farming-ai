@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.10.18-slim
 
 WORKDIR /app
 
@@ -10,10 +10,20 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements-api.txt .
+RUN pip install --no-cache-dir -r requirements-api.txt
 
-COPY . .
+RUN mkdir -p api src models
+
+COPY main.py api/main.py
+COPY inference.py api/inference.py
+COPY model.py src/model.py
+COPY severity.py src/severity.py
+COPY llm_agent.py src/llm_agent.py
+COPY gradcam.py src/gradcam.py
+COPY class_names.json models/class_names.json
+
+RUN touch api/__init__.py src/__init__.py
 
 EXPOSE 7860
 

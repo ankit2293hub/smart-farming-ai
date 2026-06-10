@@ -12,15 +12,38 @@ try:
     from src.weather import get_weather
     from src.irrigation import calculate_irrigation, CROP_WATER_NEEDS
     FEATURES_AVAILABLE = True
-except Exception:
+    FEATURES_IMPORT_ERROR = None
+except Exception as exc:
     FEATURES_AVAILABLE = False
+    FEATURES_IMPORT_ERROR = exc
+
+
+DEFAULT_API_URL = "https://ankit2293-smart-farming-api.hf.space"
+
+
+def api_post(endpoint, **kwargs):
+    response = requests.post(f"{API_URL}{endpoint}", timeout=120, **kwargs)
+    response.raise_for_status()
+    return response.json()
+
+
+def translate_text(text: str, target_language: str) -> str:
+    if target_language == "en":
+        return text
+    try:
+        from deep_translator import GoogleTranslator
+        return GoogleTranslator(source="auto", target=target_language).translate(text)
+    except Exception:
+        return text
+
+
 st.set_page_config(
     page_title="🌿 Smart Farming AI",
     page_icon="🌿",
     layout="wide"
 )
 
-API_URL = os.getenv("API_URL", "http://localhost:8000")
+API_URL = os.getenv("API_URL", DEFAULT_API_URL).rstrip("/")
 
 st.title("🌿 Smart Farming AI System")
 st.markdown("Complete AI-powered farming assistant.")
@@ -56,8 +79,7 @@ with tab1:
                 try:
                     buf = uploaded.getvalue()
                     files = {"file": ("leaf.jpg", buf, "image/jpeg")}
-                    response = requests.post(f"{API_URL}/predict", files=files)
-                    result = response.json()
+                    result = api_post("/predict", files=files)
 
                     st.subheader("📊 Diagnosis Results")
                     m1, m2, m3 = st.columns(3)
@@ -106,8 +128,7 @@ with tab2:
                     import io
 
                     files = {"file": ("leaf.jpg", uploaded_gc.getvalue(), "image/jpeg")}
-                    response = requests.post(f"{API_URL}/gradcam", files=files)
-                    result = response.json()
+                    result = api_post("/gradcam", files=files)
 
                     # Decode base64 image
                     img_data = base64.b64decode(result["heatmap"])
@@ -128,81 +149,93 @@ with tab2:
 with tab3:
     st.subheader("🌤️ Weather & Disease Risk")
 
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        city = st.text_input(
-            "Enter your city",
-            placeholder="e.g. Mumbai, Delhi, Katra"
+    if not FEATURES_AVAILABLE:
+        st.warning(
+            "Weather tools are unavailable because an optional dependency failed "
+            f"to load: {FEATURES_IMPORT_ERROR}"
         )
-        if st.button("🌍 Get Weather", type="primary"):
-            if city:
-                with st.spinner("Fetching weather..."):
-                    weather = get_weather(city)
-                    if "error" in weather:
-                        st.error(f"❌ {weather['error']}")
-                    else:
-                        st.session_state["weather"] = weather
-            else:
-                st.warning("Please enter a city name")
-
-    with col2:
-        if "weather" in st.session_state:
-            w = st.session_state["weather"]
-            st.subheader(f"📍 {w['city']}")
-            m1, m2, m3 = st.columns(3)
-            with m1:
-                st.metric("🌡️ Temperature", f"{w['temperature']}°C",
-                          f"Feels {w['feels_like']}°C")
-            with m2:
-                st.metric("💧 Humidity", f"{w['humidity']}%")
-            with m3:
-                st.metric("💨 Wind", f"{w['wind_speed']} m/s")
-            st.markdown(
-                f"**Conditions:** {w['description'].capitalize()}"
+    else:
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            city = st.text_input(
+                "Enter your city",
+                placeholder="e.g. Mumbai, Delhi, Katra"
             )
-            st.subheader("⚠️ Disease Risk Today")
-            for disease, risk in w["disease_risk"].items():
-                st.markdown(f"**{disease}:** {risk}")
+            if st.button("🌍 Get Weather", type="primary"):
+                if city:
+                    with st.spinner("Fetching weather..."):
+                        weather = get_weather(city)
+                        if "error" in weather:
+                            st.error(f"❌ {weather['error']}")
+                        else:
+                            st.session_state["weather"] = weather
+                else:
+                    st.warning("Please enter a city name")
+
+        with col2:
+            if "weather" in st.session_state:
+                w = st.session_state["weather"]
+                st.subheader(f"📍 {w['city']}")
+                m1, m2, m3 = st.columns(3)
+                with m1:
+                    st.metric("🌡️ Temperature", f"{w['temperature']}°C",
+                              f"Feels {w['feels_like']}°C")
+                with m2:
+                    st.metric("💧 Humidity", f"{w['humidity']}%")
+                with m3:
+                    st.metric("💨 Wind", f"{w['wind_speed']} m/s")
+                st.markdown(
+                    f"**Conditions:** {w['description'].capitalize()}"
+                )
+                st.subheader("⚠️ Disease Risk Today")
+                for disease, risk in w["disease_risk"].items():
+                    st.markdown(f"**{disease}:** {risk}")
 
 with tab4:
     st.subheader("💧 Smart Irrigation Advisor")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        crop = st.selectbox("🌱 Crop", list(CROP_WATER_NEEDS.keys()))
-        stage = st.selectbox(
-            "📅 Growth Stage",
-            ["seedling", "growing", "flowering", "fruiting"]
+    if not FEATURES_AVAILABLE:
+        st.warning(
+            "Irrigation tools are unavailable because an optional dependency failed "
+            f"to load: {FEATURES_IMPORT_ERROR}"
         )
-        soil_type = st.selectbox(
-            "🌍 Soil Type",
-            ["Loamy", "Sandy", "Clay", "Silt"]
-        )
-        area = st.number_input(
-            "📐 Farm Area (hectares)",
-            min_value=0.1, value=1.0, step=0.1
-        )
+    else:
+        col1, col2 = st.columns(2)
+        with col1:
+            crop = st.selectbox("🌱 Crop", list(CROP_WATER_NEEDS.keys()))
+            stage = st.selectbox(
+                "📅 Growth Stage",
+                ["seedling", "growing", "flowering", "fruiting"]
+            )
+            soil_type = st.selectbox(
+                "🌍 Soil Type",
+                ["Loamy", "Sandy", "Clay", "Silt"]
+            )
+            area = st.number_input(
+                "📐 Farm Area (hectares)",
+                min_value=0.1, value=1.0, step=0.1
+            )
 
-    with col2:
-        temperature = st.slider("🌡️ Temperature (°C)", 0, 50, 25)
-        humidity    = st.slider("💧 Humidity (%)", 0, 100, 60)
-        rainfall    = st.slider("🌧️ Rainfall (mm)", 0.0, 50.0, 0.0, step=0.5)
+        with col2:
+            temperature = st.slider("🌡️ Temperature (°C)", 0, 50, 25)
+            humidity    = st.slider("💧 Humidity (%)", 0, 100, 60)
+            rainfall    = st.slider("🌧️ Rainfall (mm)", 0.0, 50.0, 0.0, step=0.5)
 
-    if st.button("💧 Calculate Irrigation", type="primary"):
-        result = calculate_irrigation(
-            crop, stage, temperature, humidity, rainfall, area, soil_type
-        )
-        st.subheader("📊 Irrigation Recommendation")
-        m1, m2, m3 = st.columns(3)
-        with m1:
-            st.metric("Daily Need", f"{result['daily_need_mm']} mm")
-        with m2:
-            st.metric("Net Need", f"{result['net_need_mm']} mm")
-        with m3:
-            st.metric("Total Water", f"{result['total_liters']:,} L")
-        st.success(f"📋 {result['schedule']}")
-        st.info(f"🔄 Frequency: {result['frequency']}")
-        st.info(f"⏰ Best Time: {result['best_time']}")
+        if st.button("💧 Calculate Irrigation", type="primary"):
+            result = calculate_irrigation(
+                crop, stage, temperature, humidity, rainfall, area, soil_type
+            )
+            st.subheader("📊 Irrigation Recommendation")
+            m1, m2, m3 = st.columns(3)
+            with m1:
+                st.metric("Daily Need", f"{result['daily_need_mm']} mm")
+            with m2:
+                st.metric("Net Need", f"{result['net_need_mm']} mm")
+            with m3:
+                st.metric("Total Water", f"{result['total_liters']:,} L")
+            st.success(f"📋 {result['schedule']}")
+            st.info(f"🔄 Frequency: {result['frequency']}")
+            st.info(f"⏰ Best Time: {result['best_time']}")
 
 with tab5:
     st.subheader("💬 Ask the Farming Assistant")
@@ -243,17 +276,16 @@ with tab5:
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 try:
-                    response = requests.post(
-                        f"{API_URL}/chat",
+                    result = api_post(
+                        "/chat",
                         json={
                             "message": prompt,
                             "history": st.session_state.api_history[:-1]
                         }
                     )
-                    bot_reply = response.json()["response"]
+                    bot_reply = result["response"]
 
                     if lang_code != "en":
-                        from src.llm_agent import translate_text
                         bot_reply = translate_text(bot_reply, lang_code)
 
                     st.markdown(bot_reply)

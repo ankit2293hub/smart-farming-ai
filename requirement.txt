@@ -1,0 +1,5 @@
+requests
+streamlit
+pillow
+deep-translator
+python-dotenv

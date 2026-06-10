@@ -13,5 +13,3 @@ python-dotenv==1.0.0
 huggingface_hub
 pydantic
 requests
-deep-translator
-streamlit
