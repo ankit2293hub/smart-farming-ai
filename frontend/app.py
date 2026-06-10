@@ -149,31 +149,34 @@ with tab3:
                 with st.spinner("Fetching weather..."):
                     try:
                         weather_key = os.getenv("OPENWEATHER_API_KEY", "")
-                        url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={weather_key}&units=metric"
-                        r   = requests.get(url, timeout=10)
-                        d   = r.json()
-
-                        if d.get("cod") != 200:
-                            st.error(f"❌ City not found: {city}")
+                        if not weather_key:
+                            st.error("❌ Weather API key not configured in secrets.")
                         else:
-                            temp     = d["main"]["temp"]
-                            humidity = d["main"]["humidity"]
+                            url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={weather_key}&units=metric"
+                            r   = requests.get(url, timeout=10)
+                            d   = r.json()
 
-                            risks = {}
-                            risks["Late Blight"]      = "🔴 High" if humidity > 80 and 10 < temp < 24 else "🟡 Medium" if humidity > 70 and 10 < temp < 24 else "🟢 Low"
-                            risks["Powdery Mildew"]   = "🔴 High" if 20 < temp < 30 and humidity < 60 else "🟡 Medium" if 15 < temp < 30 and humidity < 70 else "🟢 Low"
-                            risks["Rust"]             = "🔴 High" if humidity > 75 and 15 < temp < 25 else "🟡 Medium" if humidity > 65 and 15 < temp < 25 else "🟢 Low"
-                            risks["Bacterial Blight"] = "🔴 High" if humidity > 80 and temp > 28 else "🟡 Medium" if humidity > 70 and temp > 25 else "🟢 Low"
+                            if d.get("cod") != 200:
+                                st.error(f"❌ City not found: {city}")
+                            else:
+                                temp     = d["main"]["temp"]
+                                humidity = d["main"]["humidity"]
 
-                            st.session_state["weather"] = {
-                                "city"        : d["name"],
-                                "temperature" : temp,
-                                "humidity"    : humidity,
-                                "description" : d["weather"][0]["description"],
-                                "wind_speed"  : d["wind"]["speed"],
-                                "feels_like"  : d["main"]["feels_like"],
-                                "disease_risk": risks
-                            }
+                                risks = {}
+                                risks["Late Blight"]      = "🔴 High" if humidity > 80 and 10 < temp < 24 else "🟡 Medium" if humidity > 70 and 10 < temp < 24 else "🟢 Low"
+                                risks["Powdery Mildew"]   = "🔴 High" if 20 < temp < 30 and humidity < 60 else "🟡 Medium" if 15 < temp < 30 and humidity < 70 else "🟢 Low"
+                                risks["Rust"]             = "🔴 High" if humidity > 75 and 15 < temp < 25 else "🟡 Medium" if humidity > 65 and 15 < temp < 25 else "🟢 Low"
+                                risks["Bacterial Blight"] = "🔴 High" if humidity > 80 and temp > 28 else "🟡 Medium" if humidity > 70 and temp > 25 else "🟢 Low"
+
+                                st.session_state["weather"] = {
+                                    "city"        : d["name"],
+                                    "temperature" : temp,
+                                    "humidity"    : humidity,
+                                    "description" : d["weather"][0]["description"],
+                                    "wind_speed"  : d["wind"]["speed"],
+                                    "feels_like"  : d["main"]["feels_like"],
+                                    "disease_risk": risks
+                                }
                     except Exception as e:
                         st.error(f"❌ Error: {str(e)}")
             else:
@@ -267,7 +270,7 @@ with tab4:
         st.success(f"📋 {schedule}")
         st.info(f"🔄 Frequency: {frequency}")
         st.info(f"⏰ Best Time: Early morning (5-7 AM) or evening (6-8 PM)")
-        st.metric("Total Water (cubic meters)", f"{round(total_cubic, 2)} m³")
+        st.metric("Total (cubic meters)", f"{round(total_cubic, 2)} m³")
 
 # ==================== TAB 5 — CHATBOT ====================
 with tab5:
