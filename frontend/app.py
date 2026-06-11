@@ -82,6 +82,8 @@ with tab1:
                         st.subheader("📄 Download Report")
                         try:
                             from fpdf import FPDF
+                        except ImportError:
+                            from fpdf2 import FPDF
 
                             class FarmingReport(FPDF):
                                 def header(self):
