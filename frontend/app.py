@@ -88,6 +88,26 @@ with tab1:
                     st.error(f"❌ Error: {str(e)}")
         else:
             st.info("Upload a leaf image and click Analyze.")
+# PDF Download button
+st.subheader("📄 Download Report")
+try:
+    from src.report import generate_report
+    pdf_bytes = generate_report(
+        disease=result["disease"],
+        confidence=result["confidence"],
+        severity=result["severity"],
+        treatment=result["treatment"],
+        top3=result["top3_predictions"]
+    )
+    st.download_button(
+        label="📥 Download PDF Report",
+        data=pdf_bytes,
+        file_name=f"disease_report_{result['disease']}.pdf",
+        mime="application/pdf",
+        type="primary"
+    )
+except Exception as e:
+    st.caption(f"PDF generation: {str(e)}")
 
 # ==================== TAB 2 — GRAD-CAM ====================
 with tab2:
