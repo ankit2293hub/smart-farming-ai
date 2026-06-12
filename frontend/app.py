@@ -84,7 +84,7 @@ with tab1:
                         try:
                             from fpdf import FPDF
                         except ImportError:
-                            from fpdf2 import FPDF
+                            from fpdf import FPDF
 
                             class FarmingReport(FPDF):
                                 def header(self):
