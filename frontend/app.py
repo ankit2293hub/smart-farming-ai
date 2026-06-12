@@ -3,7 +3,7 @@ import requests
 from PIL import Image
 import os
 import datetime
-from fpdf import FPDF
+
 
 st.set_page_config(
     page_title="🌿 Smart Farming AI",
