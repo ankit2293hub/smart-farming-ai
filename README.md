@@ -161,7 +161,7 @@ python -m src.train
 
 **Ankit Kumar**  
 B.Tech CSE — SMVDU, Katra  
-GitHub: [ankit2293hub](https://github.com/ankit2293hub)  
+GitHub: [latentankit](https://github.com/latentankit)  
 HuggingFace: [ankit2293](https://huggingface.co/ankit2293)
 
 ---
