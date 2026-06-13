@@ -16,12 +16,13 @@ API_URL = os.getenv("API_URL", "https://ankit2293-smart-farming-api.hf.space")
 st.title("🌿 Smart Farming AI System")
 st.markdown("Complete AI-powered farming assistant — disease detection, weather, irrigation & more.")
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "🔬 Diagnose Plant",
     "🗺️ Grad-CAM",
     "🌤️ Weather & Risk",
     "💧 Irrigation",
     "🌱 Fertilizer",
+    "📈 Yield Prediction",
     "💬 Farming Chatbot"
 ])
 
@@ -465,6 +466,173 @@ with tab5:
                     st.markdown(resp.json()["response"])
                 except Exception as e:
                     st.error(f"❌ {str(e)}")
+# ==================== TAB 6 — YIELD PREDICTION ====================
+with tab6:
+    st.subheader("📈 Crop Yield Prediction")
+    st.markdown("Predict your crop yield based on environmental and farming conditions.")
+
+    YIELD_DATA = {
+        "Tomato"    : {"base": 25.0,  "unit": "tonnes/ha"},
+        "Potato"    : {"base": 20.0,  "unit": "tonnes/ha"},
+        "Corn"      : {"base": 5.5,   "unit": "tonnes/ha"},
+        "Wheat"     : {"base": 3.5,   "unit": "tonnes/ha"},
+        "Rice"      : {"base": 4.5,   "unit": "tonnes/ha"},
+        "Apple"     : {"base": 15.0,  "unit": "tonnes/ha"},
+        "Grape"     : {"base": 8.0,   "unit": "tonnes/ha"},
+        "Soybean"   : {"base": 2.5,   "unit": "tonnes/ha"},
+        "Sugarcane" : {"base": 70.0,  "unit": "tonnes/ha"},
+        "Cotton"    : {"base": 1.8,   "unit": "tonnes/ha"},
+    }
+
+    col1, col2 = st.columns(2)
+    with col1:
+        y_crop     = st.selectbox("🌱 Crop", list(YIELD_DATA.keys()), key="y_crop")
+        y_area     = st.number_input("📐 Farm Area (hectares)", min_value=0.1, value=1.0, step=0.1, key="y_area")
+        y_soil     = st.selectbox("🌍 Soil Type", ["Loamy", "Sandy", "Clay", "Silt"], key="y_soil")
+        y_season   = st.selectbox("🌦️ Season", ["Kharif (Jun-Oct)", "Rabi (Nov-Apr)", "Zaid (Mar-Jun)"], key="y_season")
+        y_irrig    = st.selectbox("💧 Irrigation Type", ["Drip", "Sprinkler", "Flood", "Rainfed"], key="y_irrig")
+
+    with col2:
+        y_rainfall  = st.slider("🌧️ Annual Rainfall (mm)", 200, 3000, 800, key="y_rainfall")
+        y_temp      = st.slider("🌡️ Avg Temperature (°C)", 10, 45, 25, key="y_temp")
+        y_humidity  = st.slider("💧 Avg Humidity (%)", 20, 100, 60, key="y_humidity")
+        y_fertilizer = st.slider("🌿 Fertilizer Used (kg/ha)", 0, 300, 100, key="y_fertilizer")
+        y_pesticide  = st.slider("🧪 Pesticide Used (kg/ha)", 0, 50, 10, key="y_pesticide")
+        y_disease    = st.selectbox("🦠 Disease Pressure", ["None", "Low", "Medium", "High"], key="y_disease")
+
+    if st.button("📈 Predict Yield", type="primary", key="yield_btn"):
+
+        base_yield = YIELD_DATA[y_crop]["base"]
+        unit       = YIELD_DATA[y_crop]["unit"]
+
+        # Soil factor
+        soil_factor = {"Loamy": 1.15, "Clay": 0.95, "Silt": 1.05, "Sandy": 0.85}.get(y_soil, 1.0)
+
+        # Rainfall factor
+        if y_rainfall < 400:
+            rain_factor = 0.70
+        elif y_rainfall < 700:
+            rain_factor = 0.85
+        elif y_rainfall < 1200:
+            rain_factor = 1.10
+        elif y_rainfall < 2000:
+            rain_factor = 1.05
+        else:
+            rain_factor = 0.90
+
+        # Temperature factor
+        if y_temp < 15:
+            temp_factor = 0.75
+        elif y_temp < 20:
+            temp_factor = 0.90
+        elif y_temp < 30:
+            temp_factor = 1.10
+        elif y_temp < 35:
+            temp_factor = 0.95
+        else:
+            temp_factor = 0.75
+
+        # Irrigation factor
+        irrig_factor = {"Drip": 1.20, "Sprinkler": 1.10, "Flood": 1.00, "Rainfed": 0.85}.get(y_irrig, 1.0)
+
+        # Fertilizer factor
+        if y_fertilizer < 50:
+            fert_factor = 0.80
+        elif y_fertilizer < 100:
+            fert_factor = 0.95
+        elif y_fertilizer < 200:
+            fert_factor = 1.10
+        else:
+            fert_factor = 1.05
+
+        # Disease factor
+        disease_factor = {"None": 1.00, "Low": 0.92, "Medium": 0.80, "High": 0.60}.get(y_disease, 1.0)
+
+        # Final yield calculation
+        predicted_yield = (
+            base_yield *
+            soil_factor *
+            rain_factor *
+            temp_factor *
+            irrig_factor *
+            fert_factor *
+            disease_factor
+        )
+
+        total_yield = predicted_yield * y_area
+
+        # Rating
+        ratio = predicted_yield / base_yield
+        if ratio >= 1.1:
+            rating = "🌟 Excellent"
+            color  = "success"
+        elif ratio >= 0.9:
+            rating = "✅ Good"
+            color  = "success"
+        elif ratio >= 0.7:
+            rating = "⚠️ Average"
+            color  = "warning"
+        else:
+            rating = "❌ Poor"
+            color  = "error"
+
+        st.subheader("📊 Yield Prediction Results")
+        m1, m2, m3, m4 = st.columns(4)
+        with m1:
+            st.metric("Predicted Yield", f"{predicted_yield:.1f} {unit}")
+        with m2:
+            st.metric("Total Production", f"{total_yield:.1f} tonnes")
+        with m3:
+            st.metric("vs Average", f"{((ratio-1)*100):+.1f}%")
+        with m4:
+            st.metric("Rating", rating)
+
+        # Factor breakdown
+        st.subheader("📋 Factor Analysis")
+        factors = {
+            "Soil Quality"  : soil_factor,
+            "Rainfall"      : rain_factor,
+            "Temperature"   : temp_factor,
+            "Irrigation"    : irrig_factor,
+            "Fertilizer"    : fert_factor,
+            "Disease Impact": disease_factor,
+        }
+
+        for factor_name, factor_val in factors.items():
+            impact = (factor_val - 1) * 100
+            bar_color = "🟢" if factor_val >= 1.0 else "🔴"
+            st.markdown(f"{bar_color} **{factor_name}:** {factor_val:.2f}x ({impact:+.0f}%)")
+
+        # Recommendations
+        st.subheader("💡 Recommendations to Improve Yield")
+        recs = []
+
+        if soil_factor < 1.0:
+            recs.append("🌍 Improve soil health with organic matter and compost")
+        if rain_factor < 1.0 and y_rainfall < 700:
+            recs.append("💧 Supplement with irrigation — rainfall is insufficient")
+        if irrig_factor < 1.0:
+            recs.append("💧 Switch to drip irrigation for 20% yield improvement")
+        if fert_factor < 1.0:
+            recs.append("🌿 Increase fertilizer application based on soil test")
+        if disease_factor < 1.0:
+            recs.append("🦠 Control disease pressure with timely fungicide application")
+        if temp_factor < 1.0:
+            recs.append("🌡️ Consider crop varieties suited to your temperature range")
+
+        if recs:
+            for rec in recs:
+                st.info(rec)
+        else:
+            st.success("✅ Your farming conditions are optimal!")
+
+        # Potential yield with improvements
+        best_yield = base_yield * 1.20 * 1.10 * 1.10 * 1.20 * 1.10 * 1.00
+        st.metric(
+            "🚀 Potential Maximum Yield (with all improvements)",
+            f"{best_yield:.1f} {unit}",
+            f"+{((best_yield/predicted_yield)-1)*100:.0f}% from current"
+        )
 
 # ==================== TAB 6 — CHATBOT ====================
 with tab6:
